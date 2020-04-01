@@ -11,10 +11,10 @@ library(mapproj)
 library(lubridate)
 library(reshape2)
 library(gganimate)
-library(ggVennDiagram)
+# library(ggVennDiagram)
 library(VennDiagram)
 
-membership_data <- read.csv("D:/DVS/membership_challenge/membership_data.txt", stringsAsFactors = FALSE)
+membership_data <- read.csv("membership_data.txt", stringsAsFactors = FALSE)
 #View(membership_data)
 
 membership_data$expertise <- case_when(
@@ -170,12 +170,15 @@ ggplot() +
 
 
 
-expertise_level <- ggplot(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, colour = area)) + 
-  geom_line(size = 1.2) +
-  geom_point(size = 3) +
-  transition_reveal(month_com) +
+expertise_level <- ggplot(data = mem_data_long_avg_w, mapping = aes(x = week_com, y = expertise, colour = area)) + 
+  geom_line(size = 2) +
+  # geom_ribbon(aes(ymin = , ymax = ), alpha = .2) +
+  geom_point(size = 4) +
   scale_colour_manual(values = dvs_colour) + ylim(0,5) +
-  theme_white
+  ylab("Average level of expertise") +
+  guides(colour = FALSE) +
+  theme_white + theme(axis.title.x = element_blank()) +
+  transition_reveal(week_com)
 
 expertise_level_area_m <- ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, fill = area, colour = area), 
                                                size = 1.5, alpha = 0.1, position = "identity") +
@@ -192,12 +195,18 @@ ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y 
   theme_white
 
 members <- ggplot() + geom_area(data = cumulative_d, mapping = aes(x = date2, y = members_cumulative), fill = "#333333") +
-  theme_white
+  annotate("text", x = as.Date("2020-01-31"), y = 4000, hjust = "right", size = 6, colour = "white", label = "YEAR 1") +
+  annotate("text", x = as.Date("2020-01-31"), y = 3000, hjust = "right", size = 5, colour = "white", label = "11 573 members!") +
+  ylab("members") +
+  theme_white + theme(axis.title.x = element_blank()) +
+  transition_reveal(date2)
 
 
 
 
 
+
+#............... VENN DIAGRAM ...........................................................................................................................
 
 venn_data <- list(data = na.omit(venn_membership2$V2_data), visualization = na.omit(venn_membership2$V2_viz), society = na.omit(venn_membership2$V2_soc))
 View(venn_data$data)
