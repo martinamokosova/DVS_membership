@@ -1,4 +1,4 @@
-install.packages("ggVennDiagram")
+install.packages("VennDiagram")
 
 library(tidyverse)
 library(plyr)
@@ -12,6 +12,7 @@ library(lubridate)
 library(reshape2)
 library(gganimate)
 library(ggVennDiagram)
+library(VennDiagram)
 
 membership_data <- read.csv("D:/DVS/membership_challenge/membership_data.txt", stringsAsFactors = FALSE)
 #View(membership_data)
@@ -24,8 +25,25 @@ membership_data$expertise <- case_when(
   membership_data$visualization > membership_data$data & membership_data$visualization == membership_data$society ~ "viz+soc",
   membership_data$society == membership_data$data & membership_data$society > membership_data$visualization ~ "soc+data",
   membership_data$society == membership_data$data & membership_data$society == membership_data$visualization ~ "all equal"
-  
 )
+
+membership_data$V_data <- case_when(
+  membership_data$data >= membership_data$visualization & membership_data$data >= membership_data$society ~ membership_data$data)
+membership_data$V_viz <- case_when(
+  membership_data$visualization >= membership_data$data & membership_data$visualization >= membership_data$society ~ membership_data$visualization)
+membership_data$V_soc <- case_when(
+  membership_data$society >= membership_data$data & membership_data$society >= membership_data$visualization ~ membership_data$society)
+venn_membership <- membership_data[, c("V_data", "V_viz", "V_soc")]
+
+membership_data$V2_data <- case_when(
+  membership_data$data >= membership_data$visualization & membership_data$data >= membership_data$society ~ rownames(membership_data))
+membership_data$V2_viz <- case_when(
+  membership_data$visualization >= membership_data$data & membership_data$visualization >= membership_data$society ~ rownames(membership_data))
+membership_data$V2_soc <- case_when(
+  membership_data$society >= membership_data$data & membership_data$society >= membership_data$visualization ~ rownames(membership_data))
+venn_membership2 <- membership_data[, c("V2_data", "V2_viz", "V2_soc")]
+
+
 
 join_dates <- strsplit(x = membership_data$date, split = "/")
 
@@ -39,8 +57,17 @@ membership_data$week_com <- floor_date(membership_data$date2, unit = "week")
 membership_data$month_com <- floor_date(membership_data$date2, unit = "month")
 
   
-mem_data_long <- melt(membership_data[,c(1:5, 7:length(membership_data))], id.vars = c("lat", "long", "date2", "year", "month", "day", "week_com", "month_com"), 
+mem_data_long <- melt(membership_data, id.vars = c("lat", "long", "date2", "year", "month", "day", "week_com", "month_com"), 
+                      measure.vars = c("data", "visualization", "society"),
                       variable.name = "area", value.name = "expertise")
+
+# -------------------------
+mem_data_long$v <-"1"
+membership_AVG <- dcast(data = mem_data_long, v ~ area, mean, value.var = "expertise")
+mem_data_long <- mem_data_long[, c(1:(length(mem_data_long)-1))]
+membership_AVG <- membership_AVG[, c(2:length(membership_AVG))]
+# -------------------------
+
 
 mem_data_wide_avg <- dcast(data = mem_data_long, week_com + month_com ~ area, mean, value.var = "expertise")
 mem_data_wide_count <- dcast(data = mem_data_long, week_com + month_com ~ area, length, value.var = "expertise")
@@ -122,6 +149,7 @@ map <- ggplot() +
   geom_point(membership_data, mapping = aes(x = long, y = lat, colour = expertise, size = date2, alpha = date2)) +
   scale_colour_manual(values = dvs_colours, breaks = names(dvs_colours)) +  
   scale_size_date(range = c(.5, 3)) + scale_alpha_date(range = c(1, .2)) + 
+  guides(size = FALSE, alpha = FALSE, colour = FALSE) +
   theme_map + coord_map() +
   enter_grow(size = 0) +
   transition_time(date2) +
@@ -166,5 +194,19 @@ ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y 
 members <- ggplot() + geom_area(data = cumulative_d, mapping = aes(x = date2, y = members_cumulative), fill = "#333333") +
   theme_white
 
+
+
+
+
+
+venn_data <- list(data = na.omit(venn_membership2$V2_data), visualization = na.omit(venn_membership2$V2_viz), society = na.omit(venn_membership2$V2_soc))
+View(venn_data$data)
+
+# ggVennDiagram(x = venn_data)
+
+venn.diagram(venn_data, filename = "venn_diagram.png", height = 200, width = 200,
+             cex = .18, cat.cex = .2, default.cat.pos = "outer", cat.pos = c(-25,20,180), cat.dist = c(.1, .1, .07),
+             fontfamily = "sans",
+             fill = dvs_colour, col = dvs_colour, alpha = .4)
 
 
