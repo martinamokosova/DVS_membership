@@ -75,6 +75,9 @@ mem_data_wide_sum <- dcast(data = mem_data_long, week_com + month_com ~ area, su
 
 mem_data_wide_avg_m <- dcast(data = mem_data_long, month_com ~ area, mean, value.var = "expertise")
 mem_data_wide_avg_w <- dcast(data = mem_data_long, week_com ~ area, mean, value.var = "expertise")
+mem_data_wide_min_m <- dcast(data = mem_data_long, month_com ~ area, min, value.var = "expertise")
+mem_data_wide_min_w <- dcast(data = mem_data_long, week_com ~ area, min, value.var = "expertise")
+
 mem_data_wide_count_d <- dcast(data = mem_data_long, date2 + week_com + month_com ~ area, length, value.var = "expertise")
 mem_data_wide_sum_m <- dcast(data = mem_data_long, month_com ~ area, sum, value.var = "expertise")
 
@@ -107,6 +110,8 @@ cumulative_w[,c(1:2, 4:8)]
 ncol(mem_data_wide_sum)
 mem_data_wide_sum[, c(1, 5:7)]
 
+
+
 theme_map <- theme_bw() + theme(panel.grid = element_blank(),
                                   axis.title = element_blank(),
                                   axis.ticks = element_blank(),
@@ -115,8 +120,10 @@ theme_map <- theme_bw() + theme(panel.grid = element_blank(),
 theme_white <- theme_bw() + theme(panel.grid = element_blank(),
                                   axis.ticks = element_blank())
 
+
+
 dvs_colour <- c("#368d90", "#A35685", "#E8BF12")
-dvs_colour_c <- colorRampPalette(c("#368d90", "#A35685", "#E8BF12"))
+
 colour_data <- dvs_colour[1]
 colour_viz <- dvs_colour[2]
 colour_soc <- dvs_colour[3]
@@ -132,7 +139,8 @@ dvs_colours <- c("data" = colour_data,
                  "viz+soc" = colour_vizsoc,
                  "soc+data" = colour_socdata,
                  "all equal" = colour_all)
-View(dvs_colours)
+
+
   
   # ggplot() + geom_bin2d(membership_data, mapping = aes(x = long, y = lat), binwidth = 3) +
 #   scale_fill_viridis_c(option = "inferno", begin = .9, end = .1) +
@@ -148,7 +156,7 @@ View(dvs_colours)
 map <- ggplot() +
   geom_point(membership_data, mapping = aes(x = long, y = lat, colour = expertise, size = date2, alpha = date2)) +
   scale_colour_manual(values = dvs_colours, breaks = names(dvs_colours)) +  
-  scale_size_date(range = c(.5, 3)) + scale_alpha_date(range = c(1, .2)) + 
+  scale_size_date(range = c(.5, 4)) + scale_alpha_date(range = c(1, .2)) + 
   guides(size = FALSE, alpha = FALSE, colour = FALSE) +
   theme_map + coord_map() +
   enter_grow(size = 0) +
@@ -156,52 +164,63 @@ map <- ggplot() +
   shadow_mark() +
   ggtitle("{frame_time}")
 
-map
+animate(map, 
+        width = 900, # 900px wide
+        height = 600, # 600px high
+        nframes = 200, # 200 frames
+        fps = 10) # 10 frames per second
 
-class(format(membership_data$date2, "%d %B %Y"))
+anim_save("dvs_map.gif")
+# class(format(membership_data$date2, "%d %B %Y"))
 
-
-warnings()
-
-class(names(dvs_colours))
-ggplot() +
-  geom_point(membership_data, mapping = aes(x = long, y = lat, colour = expertise), size = 2, alpha = .7) +
-  scale_colour_manual(values = dvs_colours) +  theme_map + coord_map()
 
 
 
 expertise_level <- ggplot(data = mem_data_long_avg_w, mapping = aes(x = week_com, y = expertise, colour = area)) + 
-  geom_line(size = 2) +
-  # geom_ribbon(aes(ymin = , ymax = ), alpha = .2) +
-  geom_point(size = 4) +
+  geom_line(size = 1) +
+  geom_point(size = 4, alpha = .7) +
   scale_colour_manual(values = dvs_colour) + ylim(0,5) +
   ylab("Average level of expertise") +
   guides(colour = FALSE) +
   theme_white + theme(axis.title.x = element_blank()) +
   transition_reveal(week_com)
 
-expertise_level_area_m <- ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, fill = area, colour = area), 
-                                               size = 1.5, alpha = 0.1, position = "identity") +
-  scale_fill_manual(values = dvs_colour) + scale_colour_manual(values = dvs_colour) + ylim(0,5) +
-  theme_white
+animate(expertise_level, 
+        width = 300, # 900px wide
+        height = 300, # 600px high
+        nframes = 200, # 200 frames
+        fps = 10) # 10 frames per second
 
-expertise_level_area_w <- ggplot() + geom_area(data = mem_data_long_avg_w, mapping = aes(x = week_com, y = expertise, fill = area, colour = area), 
-                                             size = 1.5, alpha = 0.1, position = "identity") +
-  scale_fill_manual(values = dvs_colour) + scale_colour_manual(values = dvs_colour) + ylim(0,5) +
-  theme_white
+anim_save("dvs_expertise.gif")
 
-ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, fill = area), colour = "white", size = 2, alpha = 1) +
-  scale_fill_manual(values = dvs_colour) + scale_colour_manual(values = dvs_colour) +
-  theme_white
+# expertise_level_area_m <- ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, fill = area, colour = area), 
+#                                                size = 1.5, alpha = 0.1, position = "identity") +
+#   scale_fill_manual(values = dvs_colour) + scale_colour_manual(values = dvs_colour) + ylim(0,5) +
+#   theme_white
+# 
+# expertise_level_area_w <- ggplot() + geom_area(data = mem_data_long_avg_w, mapping = aes(x = week_com, y = expertise, fill = area, colour = area), 
+#                                              size = 1.5, alpha = 0.1, position = "identity") +
+#   scale_fill_manual(values = dvs_colour) + scale_colour_manual(values = dvs_colour) + ylim(0,5) +
+#   theme_white
 
-members <- ggplot() + geom_area(data = cumulative_d, mapping = aes(x = date2, y = members_cumulative), fill = "#333333") +
-  annotate("text", x = as.Date("2020-01-31"), y = 4000, hjust = "right", size = 6, colour = "white", label = "YEAR 1") +
+# ggplot() + geom_area(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, fill = area), colour = "white", size = 2, alpha = 1) +
+#   scale_fill_manual(values = dvs_colour) + scale_colour_manual(values = dvs_colour) +
+#   theme_white
+
+members <- ggplot() + geom_area(data = cumulative_d, mapping = aes(x = date2, y = members_cumulative), fill = "#333333", alpha = .8) +
+  annotate("text", x = as.Date("2020-01-31"), y = 6500, hjust = "right", size = 6, colour = "white", label = "YEAR 1") +
   annotate("text", x = as.Date("2020-01-31"), y = 3000, hjust = "right", size = 5, colour = "white", label = "11 573 members!") +
   ylab("members") +
   theme_white + theme(axis.title.x = element_blank()) +
   transition_reveal(date2)
 
+animate(members, 
+        width = 900, # 900px wide
+        height = 100, # 600px high
+        nframes = 200, # 200 frames
+        fps = 10) # 10 frames per second
 
+anim_save("dvs_members.gif")
 
 
 
@@ -213,7 +232,7 @@ View(venn_data$data)
 
 # ggVennDiagram(x = venn_data)
 
-venn.diagram(venn_data, filename = "venn_diagram.png", height = 200, width = 200,
+venn.diagram(venn_data, filename = "dvs_venn_diagram.png", height = 300, width = 300,
              cex = .18, cat.cex = .2, default.cat.pos = "outer", cat.pos = c(-25,20,180), cat.dist = c(.1, .1, .07),
              fontfamily = "sans",
              fill = dvs_colour, col = dvs_colour, alpha = .4)
