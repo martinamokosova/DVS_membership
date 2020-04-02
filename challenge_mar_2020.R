@@ -118,6 +118,7 @@ theme_map <- theme_bw() + theme(panel.grid = element_blank(),
                                   axis.text = element_blank())
 
 theme_white <- theme_bw() + theme(panel.grid = element_blank(),
+                                  axis.title = element_blank(),
                                   axis.ticks = element_blank())
 
 
@@ -156,7 +157,7 @@ dvs_colours <- c("data" = colour_data,
 map <- ggplot() +
   geom_point(membership_data, mapping = aes(x = long, y = lat, colour = expertise, size = date2, alpha = date2)) +
   scale_colour_manual(values = dvs_colours, breaks = names(dvs_colours)) +  
-  scale_size_date(range = c(.5, 4)) + scale_alpha_date(range = c(1, .2)) + 
+  scale_size_date(range = c(.5, 3)) + scale_alpha_date(range = c(1, .2)) + 
   guides(size = FALSE, alpha = FALSE, colour = FALSE) +
   theme_map + coord_map() +
   enter_grow(size = 0) +
@@ -166,7 +167,7 @@ map <- ggplot() +
 
 animate(map, 
         width = 900, # 900px wide
-        height = 600, # 600px high
+        height = 480, # 600px high
         nframes = 200, # 200 frames
         fps = 10) # 10 frames per second
 
@@ -176,14 +177,25 @@ anim_save("dvs_map.gif")
 
 
 
-expertise_level <- ggplot(data = mem_data_long_avg_w, mapping = aes(x = week_com, y = expertise, colour = area)) + 
+# ...................................... language settings ................................................................................................
+Sys.getlocale()
+# "LC_COLLATE=Slovak_Slovakia.1250;LC_CTYPE=Slovak_Slovakia.1250;LC_MONETARY=Slovak_Slovakia.1250;LC_NUMERIC=C;LC_TIME=Slovak_Slovakia.1250"
+Sys.setlocale("LC_ALL","English_United Kingdom")
+Sys.setlocale("LC_ALL","Slovak_Slovakia")
+# ...................................... language settings ................................................................................................
+
+
+
+
+expertise_level <- ggplot(data = mem_data_long_avg_m, mapping = aes(x = month_com, y = expertise, colour = area)) + 
   geom_line(size = 1) +
-  geom_point(size = 4, alpha = .7) +
-  scale_colour_manual(values = dvs_colour) + ylim(0,5) +
-  ylab("Average level of expertise") +
+  geom_point(size = 4, alpha = .8) +
+  scale_colour_manual(values = dvs_colour) + 
+  scale_y_continuous(limits = c(0,5), breaks = seq(0, 5, 1), labels = c("Novice", "Learning", "Beginning", "Intermediate", "Advanced", "Expert")) +
+  ggtitle("Average level of expertise") + 
   guides(colour = FALSE) +
   theme_white + theme(axis.title.x = element_blank()) +
-  transition_reveal(week_com)
+  transition_reveal(month_com)
 
 animate(expertise_level, 
         width = 300, # 900px wide
@@ -208,15 +220,15 @@ anim_save("dvs_expertise.gif")
 #   theme_white
 
 members <- ggplot() + geom_area(data = cumulative_d, mapping = aes(x = date2, y = members_cumulative), fill = "#333333", alpha = .8) +
-  annotate("text", x = as.Date("2020-01-31"), y = 6500, hjust = "right", size = 6, colour = "white", label = "YEAR 1") +
+  annotate("text", x = as.Date("2020-01-31"), y = 7000, hjust = "right", size = 6, colour = "white", label = "YEAR 1") +
   annotate("text", x = as.Date("2020-01-31"), y = 3000, hjust = "right", size = 5, colour = "white", label = "11 573 members!") +
-  ylab("members") +
+  ggtitle("Members") +
   theme_white + theme(axis.title.x = element_blank()) +
   transition_reveal(date2)
 
 animate(members, 
         width = 900, # 900px wide
-        height = 100, # 600px high
+        height = 120, # 600px high
         nframes = 200, # 200 frames
         fps = 10) # 10 frames per second
 
