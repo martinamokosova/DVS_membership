@@ -210,7 +210,8 @@ animate(map,
         width = 900, # 900px wide
         height = 480, # 600px high
         nframes = 200, # 200 frames
-        fps = 10) # 10 frames per second
+        fps = 10, # 10 frames per second
+        end_pause = 3)
 
 anim_save("dvs_map.gif")
 # class(format(membership_data$date2, "%d %B %Y"))
@@ -242,7 +243,8 @@ animate(expertise_level,
         width = 300, # 900px wide
         height = 300, # 600px high
         nframes = 200, # 200 frames
-        fps = 10) # 10 frames per second
+        fps = 10, # 10 frames per second
+        end_pause = 3)
 
 anim_save("dvs_expertise.gif")
 
@@ -271,7 +273,8 @@ animate(members,
         width = 900, # 900px wide
         height = 120, # 600px high
         nframes = 200, # 200 frames
-        fps = 10) # 10 frames per second
+        fps = 10, # 10 frames per second
+        end_pause = 3)
 
 anim_save("dvs_members.gif")
 
@@ -308,10 +311,10 @@ venn_long_a$y <- case_when(
   venn_long_a$expertise == "society" ~ 1.2
 )
 venn_long_b$x <- case_when(
-  venn_long_b$expertise == "data_viz" ~ 2.6,
+  venn_long_b$expertise == "data_viz" ~ 2.5,
   venn_long_b$expertise == "viz_soc" ~ 3.3,
-  venn_long_b$expertise == "soc_data" ~1.8,
-  venn_long_b$expertise == "all" ~ 2.55
+  venn_long_b$expertise == "soc_data" ~1.7,
+  venn_long_b$expertise == "all" ~ 2.5
 )
 venn_long_b$y <- case_when(
   venn_long_b$expertise == "data_viz" ~ 2.85,
@@ -319,19 +322,27 @@ venn_long_b$y <- case_when(
   venn_long_b$expertise == "soc_data" ~ 1.7,
   venn_long_b$expertise == "all" ~ 2.05
 )
-levels(venn_long_b$expertise)
+# levels(venn_long_b$expertise)
 
-ggplot() + geom_point(venn_long_a, mapping = aes(x = x, y = y, size = count, colour = expertise), alpha = .5) +
-  geom_text(venn_long_a, mapping = aes(x = x, y = y, label = count, group = expertise)) +
-  geom_text(venn_long_b, mapping = aes(x = x, y = y, label = count, group = expertise)) +
-  annotate(geom = "text", x = 2, y = 4.2, label = "data") +
-  annotate(geom = "text", x = 3.8, y = 3.9, label = "visualization") +
-  annotate(geom = "text", x = 2.5, y = 0.02, label = "society") +
+dvs_venn <- ggplot() + geom_point(venn_long_a, mapping = aes(x = x, y = y, size = count, colour = expertise), alpha = .6) +
+  geom_text(venn_long_a, mapping = aes(x = x, y = y, label = count, group = expertise), size = 5.7) +
+  geom_text(venn_long_b, mapping = aes(x = x, y = y, label = count, group = expertise), size = 4.7) +
+  annotate(geom = "text", x = .4, y = 3.92, label = "data", size = 6.5) +
+  annotate(geom = "text", x = 4, y = 3.92, label = "visualization", size = 6.5) +
+  annotate(geom = "text", x = 2.5, y = 0.03, label = "society", size = 6.5) +
   scale_colour_manual(values = dvs_colour) +
-  scale_size_continuous(range = c(1,130)) +
+  scale_size_continuous(range = c(1,80)) +
   scale_x_continuous(limits = c(0, 5)) +
   scale_y_continuous(limits = c(0,4)) +
   guides(size = FALSE, colour = FALSE) +
   theme_white + theme(axis.text = element_blank()) +
   transition_reveal(date2, keep_last = FALSE) #+ shadow_mark(past = FALSE, future = FALSE)
-warnings()
+
+animate(dvs_venn, 
+        width = 300, # 900px wide
+        height = 300, # 600px high
+        nframes = 200, # 200 frames
+        fps = 10, # 10 frames per second
+        end_pause = 3) 
+
+anim_save("dvs_venn.gif")
