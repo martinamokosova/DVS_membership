@@ -1,4 +1,4 @@
-install.packages("VennDiagram")
+install.packages("ggrepel")
 
 library(tidyverse)
 library(plyr)
@@ -11,11 +11,34 @@ library(mapproj)
 library(lubridate)
 library(reshape2)
 library(gganimate)
+# library(ggrepel)
 # library(ggVennDiagram)
-library(VennDiagram)
+# library(VennDiagram)
 
 membership_data <- read.csv("membership_data.txt", stringsAsFactors = FALSE)
 #View(membership_data)
+
+join_dates <- strsplit(x = membership_data$date, split = "/")
+
+membership_data$year <- as.numeric(sapply(join_dates, "[", 3))
+membership_data$month <- as.numeric(sapply(join_dates, "[", 1))
+membership_data$day <- as.numeric(sapply(join_dates, "[", 2))
+
+membership_data$date2 <- make_date(year = membership_data$year, month = membership_data$month, day = membership_data$day)
+# membership_data$week <- lubridate::week(membership_data$date2)
+membership_data$week_com <- floor_date(membership_data$date2, unit = "week")
+membership_data$month_com <- floor_date(membership_data$date2, unit = "month")
+
+
+mem_data_long <- melt(membership_data, id.vars = c("lat", "long", "date2", "year", "month", "day", "week_com", "month_com"), 
+                      measure.vars = c("data", "visualization", "society"),
+                      variable.name = "area", value.name = "expertise")
+
+
+
+
+
+# ...........................................................................................................................................................
 
 membership_data$expertise <- case_when(
   membership_data$data > membership_data$visualization & membership_data$data > membership_data$society ~ "data",
@@ -43,23 +66,41 @@ membership_data$V2_soc <- case_when(
   membership_data$society >= membership_data$data & membership_data$society >= membership_data$visualization ~ rownames(membership_data))
 venn_membership2 <- membership_data[, c("V2_data", "V2_viz", "V2_soc")]
 
+membership_data$V3_data <- case_when(
+  membership_data$data >= membership_data$visualization & membership_data$data >= membership_data$society ~ 1,
+  TRUE ~ 0)
+membership_data$V3_dv <- case_when(
+  membership_data$data == membership_data$visualization & membership_data$data > membership_data$society ~ 1,
+  TRUE ~ 0)
+membership_data$V3_viz <- case_when(
+  membership_data$visualization >= membership_data$data & membership_data$visualization >= membership_data$society ~ 1,
+  TRUE ~ 0)
+membership_data$V3_vs <- case_when(
+  membership_data$visualization > membership_data$data & membership_data$visualization == membership_data$society ~ 1,
+  TRUE ~ 0)
+membership_data$V3_soc <- case_when(
+  membership_data$society >= membership_data$data & membership_data$society >= membership_data$visualization ~ 1,
+  TRUE ~ 0)
+membership_data$V3_sd <- case_when(
+  membership_data$society == membership_data$data & membership_data$society > membership_data$visualization ~ 1,
+  TRUE ~ 0)
+membership_data$V3_all <- case_when(
+  membership_data$society == membership_data$data & membership_data$society == membership_data$visualization ~ 1,
+  TRUE ~ 0)
+
+venn_membership3 <- membership_data[,c("lat", "long", "date2", "week_com", "month_com", "V3_data", "V3_dv", "V3_viz", "V3_vs", "V3_soc", "V3_sd", "V3_all")]
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), data = cumsum(V3_data)))
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), data_viz = cumsum(V3_dv)))
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), visualization = cumsum(V3_viz)))
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), viz_soc = cumsum(V3_vs)))
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), society = cumsum(V3_soc)))
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), soc_data = cumsum(V3_sd)))
+venn_membership3 <- (mutate(group_by(venn_membership3, date2), all = cumsum(V3_all)))
+
+# ...........................................................................................................................................................
 
 
-join_dates <- strsplit(x = membership_data$date, split = "/")
 
-membership_data$year <- as.numeric(sapply(join_dates, "[", 3))
-membership_data$month <- as.numeric(sapply(join_dates, "[", 1))
-membership_data$day <- as.numeric(sapply(join_dates, "[", 2))
-
-membership_data$date2 <- make_date(year = membership_data$year, month = membership_data$month, day = membership_data$day)
-# membership_data$week <- lubridate::week(membership_data$date2)
-membership_data$week_com <- floor_date(membership_data$date2, unit = "week")
-membership_data$month_com <- floor_date(membership_data$date2, unit = "month")
-
-  
-mem_data_long <- melt(membership_data, id.vars = c("lat", "long", "date2", "year", "month", "day", "week_com", "month_com"), 
-                      measure.vars = c("data", "visualization", "society"),
-                      variable.name = "area", value.name = "expertise")
 
 # -------------------------
 mem_data_long$v <-"1"
@@ -250,3 +291,47 @@ venn.diagram(venn_data, filename = "dvs_venn_diagram.png", height = 300, width =
              fill = dvs_colour, col = dvs_colour, alpha = .4)
 
 
+venn3a <- venn_membership3[, c("date2", "week_com", "month_com", "data", "visualization", "society")]
+venn3b <- venn_membership3[, c("date2", "week_com", "month_com", "data_viz", "viz_soc", "soc_data", "all")]
+
+venn_long_a <- melt(venn3a, id.vars = c("date2", "week_com", "month_com"), variable.name = "expertise", value.name = "count")
+venn_long_b <- melt(venn3b, id.vars = c("date2", "week_com", "month_com"), variable.name = "expertise", value.name = "count")
+
+venn_long_a$x <- case_when(
+  venn_long_a$expertise == "data" ~ 1.5,
+  venn_long_a$expertise == "visualization" ~ 3.5,
+  venn_long_a$expertise == "society" ~ 2.5
+)
+venn_long_a$y <- case_when(
+  venn_long_a$expertise == "data" ~ 2.5,
+  venn_long_a$expertise == "visualization" ~ 2.5,
+  venn_long_a$expertise == "society" ~ 1.2
+)
+venn_long_b$x <- case_when(
+  venn_long_b$expertise == "data_viz" ~ 2.6,
+  venn_long_b$expertise == "viz_soc" ~ 3.3,
+  venn_long_b$expertise == "soc_data" ~1.8,
+  venn_long_b$expertise == "all" ~ 2.55
+)
+venn_long_b$y <- case_when(
+  venn_long_b$expertise == "data_viz" ~ 2.85,
+  venn_long_b$expertise == "viz_soc" ~ 1.7,
+  venn_long_b$expertise == "soc_data" ~ 1.7,
+  venn_long_b$expertise == "all" ~ 2.05
+)
+levels(venn_long_b$expertise)
+
+ggplot() + geom_point(venn_long_a, mapping = aes(x = x, y = y, size = count, colour = expertise), alpha = .5) +
+  geom_text(venn_long_a, mapping = aes(x = x, y = y, label = count, group = expertise)) +
+  geom_text(venn_long_b, mapping = aes(x = x, y = y, label = count, group = expertise)) +
+  annotate(geom = "text", x = 2, y = 4.2, label = "data") +
+  annotate(geom = "text", x = 3.8, y = 3.9, label = "visualization") +
+  annotate(geom = "text", x = 2.5, y = 0.02, label = "society") +
+  scale_colour_manual(values = dvs_colour) +
+  scale_size_continuous(range = c(1,130)) +
+  scale_x_continuous(limits = c(0, 5)) +
+  scale_y_continuous(limits = c(0,4)) +
+  guides(size = FALSE, colour = FALSE) +
+  theme_white + theme(axis.text = element_blank()) +
+  transition_reveal(date2, keep_last = FALSE) #+ shadow_mark(past = FALSE, future = FALSE)
+warnings()
